@@ -39,3 +39,7 @@ acc_vote_prob: 0.566689671037 acc_vote_class: 0.477984817115 acc_MLP: 0.57971014
 acc_vote_prob: 0.333333333333 acc_vote_class: 0.333333333333 acc_MLP: 0.37727168162 acc_boosting: 0.469473199908 nb_models: 3 nb_features: 1024 
 acc_vote_prob: 0.64714542822 acc_vote_class: 0.64714542822 acc_MLP: 0.718691727899 acc_boosting: 0.696602119109 nb_models: 3 nb_features: 512 
 acc_vote_prob: 0.319825708061 acc_vote_class: 0.318767507003 acc_MLP: 0.333333333333 acc_boosting: 0.522751322751 nb_models: 3 nb_features: 1024 
+acc_vote_prob: 0.763658506881 acc_vote_class: 0.74974762852 acc_MLP: 0.750494593973 acc_boosting: 0.780227066672 acc_MLP_class: 0.581136415919 nb_models: 8 nb_features: 512 
+acc_vote_prob: 0.765555690875 acc_vote_class: 0.74974762852 acc_MLP: 0.750494593973 acc_boosting: 0.769769550332 acc_MLP_class: 0.670523281776 nb_models: 8 nb_features: 512 
+acc_vote_prob: 0.763907495365 acc_vote_class: 0.74974762852 acc_MLP: 0.750494593973 acc_boosting: 0.77369111896 acc_MLP_class: 0.561996779388 nb_models: 8 nb_features: 512 
+acc_vote_prob: 0.76294131179 acc_vote_class: 0.74974762852 acc_MLP: 0.750494593973 acc_boosting: 0.792427502402 acc_MLP_class: 0.581136415919 nb_models: 8 nb_features: 512 

@@ -94,7 +94,6 @@ def get_features(names, n_classes=3):
     n_subvideos_per_video = []
 
     for video_name in names:
-
         X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc, n_frames_per_video = get_features_from_one_video(
             video_name, names)
 
