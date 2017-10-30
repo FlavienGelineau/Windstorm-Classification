@@ -117,27 +117,22 @@ def boosting_MLP(X_train, X_test, Y_train, Y_test, n_models, n_classes):
     return Y_test_pred
 
 
-def get_X_boosting_classes(X, n_classes, n_models_together):
+def get_X_boosting_classes(X, n_classes, n_models):
     return [[
         np.array(X[i][j * n_classes:(j + 1) * n_classes]).argmax()
-        for j in range(n_models_together)]
+        for j in range(n_models)]
         for i in range(len(X))]
 
 
-def create_and_fit_model_boost(
-        input_size, n_classes, X_test_boosting, Y_test, X_train_boosting,
-        Y_train):
-    model = create_vote_model(
-        learning_rate=10 ** -3, input_size=input_size,
-        n_classes=n_classes, decay=0)
-    checkpointer_boosting = ModelCheckpoint(
-        filepath=get_path("Models", "boosting_vote.hdf5"), verbose=1,
-        save_best_only=True, monitor='val_acc')
+def create_and_fit_model_boost(input_size, n_classes, X_test_boosting, Y_test, X_train_boosting, Y_train):
+    model = create_vote_model(learning_rate=10 ** -3, input_size=input_size, n_classes=n_classes, decay=0)
+    checkpointer_boosting = ModelCheckpoint(filepath=get_path("Models", "boosting_vote.hdf5"), verbose=1,
+                                            save_best_only=True, monitor='val_acc')
 
     validation_data = (X_test_boosting, np.array(Y_test))
     callbacks = [checkpointer_boosting, EarlyStopping(patience=800)]
     model.fit(X_train_boosting, Y_train, validation_data=validation_data,
-              batch_size=800, epochs=1800, verbose=1, shuffle=True,
+              batch_size=800, epochs=10, verbose=1, shuffle=True,
               callbacks=callbacks)
     model.load_weights('../Models/boosting_vote.hdf5')
     return model
@@ -146,20 +141,27 @@ def create_and_fit_model_boost(
 def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test,
                                  n_models, n_classes, n_models_together=2):
     """Votes taken as an input into a MLP."""
-    X_train_boosting = get_X_boosting_classes(X_train, n_classes, n_models_together)
-    X_test_boosting = get_X_boosting_classes(X_test, n_classes, n_models_together)
+    X_train_boosting = np.array(get_X_boosting_classes(X_train, n_classes, n_models))
+    X_test_boosting = np.array(get_X_boosting_classes(X_test, n_classes, n_models))
 
     for i in range(2, n_models + 1):
+        print("iteration {}".format(i))
+        X_train_fit = X_train_boosting[:, :n_models_together]
+        X_test_fit = X_train_boosting[:, :n_models_together]
 
-        model = create_and_fit_model_boost(n_models_together, n_classes, X_test_boosting, Y_test, X_train_boosting,
+        model = create_and_fit_model_boost(n_models_together, n_classes, X_test_fit, Y_test, X_train_fit,
                                            Y_train)
-        Y_train_pred = model.predict_classes(X_train_boosting).tolist()
-        Y_test_pred = model.predict_classes(X_test_boosting).tolist()
+        print("the model is fitted")
+        Y_train_pred = model.predict_classes(X_train_fit).tolist()
+        Y_train_pred = np.expand_dims(Y_train_pred, axis=1)
+        Y_test_pred = model.predict_classes(X_test_fit).tolist()
+        Y_test_pred = np.expand_dims(Y_test_pred, axis=1)
         if i != n_models:
-            new_X_train_boosting = np.concatenate(Y_train_pred, X_train[n_models_together:], axis=1)
-            new_X_test_boosting = np.concatenate(Y_test_pred, X_test[n_models_together:], axis=1)
+            X_train_boost_truncated = X_train_boosting[:, n_models_together:]
+            X_test_boost_truncated = X_test_boosting[:, n_models_together:]
 
-            X_train_boosting = new_X_train_boosting[:, :n_models_together]
-            X_test_boosting = new_X_test_boosting[:, :n_models_together]
+            X_train_boosting = np.concatenate((Y_train_pred, X_train_boost_truncated), axis=1)
+            X_test_boosting = np.concatenate((Y_test_pred, X_test_boost_truncated), axis=1)
+
 
     return Y_test_pred

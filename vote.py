@@ -160,7 +160,7 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
         load_weights_LSTM_CNN(LSTM_CNN, name_file)
         checkpointer = get_checkpointer(name_file)
 
-        n_models_fixed = n_models
+        n_models_fixed = 8
         if n_models != 1:
             start = (i / (n_models_fixed - 1)) * (2048 - nb_features)
         else:
@@ -312,7 +312,7 @@ def main():
     """Launch the global programm."""
     names_train = import_set.get_names_train()
     n_classes = 3
-    n_models = [8]
+    n_models = [2]
     nb_features = [512]
     # data_processing.get_all_names_from_path("Windstorm/videos")
     all_names = names_train
