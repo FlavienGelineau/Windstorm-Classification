@@ -106,7 +106,7 @@ def boosting_MLP(X_train, X_test, Y_train, Y_test, n_models, n_classes):
             input_size, n_classes, X_test_boosting, Y_test,
             X_train_boosting, Y_train)
         Y_train_pred = model.predict(X_train_boosting).tolist()
-        Y_test_pred = model.predict_classes(X_test_boosting)
+        Y_test_pred = model.predict(X_test_boosting).tolist()
         if i != n_models:
             new_X_train_boosting = get_X_boosting(i * n_classes, (i + 1) * n_classes, X_train, n_classes)
             new_X_test_boosting = get_X_boosting(i * n_classes, (i + 1) * n_classes, X_test, n_classes)
