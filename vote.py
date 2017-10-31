@@ -283,8 +283,7 @@ def one_iter(n_classes, n_models, nb_features, X_train_CNN, X_test_CNN,
     history = MLP_on_classes_predicted.fit(X_train_classes_predicted, Y_train, validation_data=validation_data,
                                            batch_size=300, epochs=1800, verbose=1,
                                            shuffle=True, callbacks=callbacks)
-    # showing_infos_Windstorm.show_accuracy_over_time(
-    #   history, "assemble model")
+
     MLP_on_classes_predicted.load_weights(
         '../Models/MLP_on_classes_predicted.hdf5')
 
