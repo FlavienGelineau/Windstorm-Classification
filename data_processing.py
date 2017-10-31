@@ -16,19 +16,19 @@ def get_all_names_from_path(path):
 
 
 def get_path(folder, name_file):
-	"""Get path to import files."""
-	with open('info_files/paths.txt') as f:
-		content = f.readlines()
-	name_to_path = {}
-	for line in content:
-		name, path = line.split()
-		name_to_path[name] = path
+    """Get path to import files."""
+    with open('info_files/paths.txt') as f:
+        content = f.readlines()
+    name_to_path = {}
+    for line in content:
+        name, path = line.split()
+        name_to_path[name] = path
 
-	return name_to_path[folder] + name_file
+    return name_to_path[folder] + name_file
 
 
 def jpeg_to_array(infilename, size):
-    """Return he array version of a jpeg picture."""
+    """Return the array version of a jpeg picture."""
     img = Image.open(infilename)
     img = img.resize(size, Image.ANTIALIAS)
     img.load()

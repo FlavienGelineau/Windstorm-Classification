@@ -54,19 +54,15 @@ def fitting_colour_model(n_classes, X_train_colours, X_test_colours, Y_train,
 
     Currently, does not give good results at all.
     """
-    checkpointer_colours = ModelCheckpoint(
-        filepath='../Models/colours.hdf5', verbose=1,
-        save_best_only=True)
-    CNN_colours = colours.create_model(
-        learning_rate=5 * 10 ** -6, n_classes=n_classes)
+    checkpointer_colours = ModelCheckpoint(filepath='../Models/colours.hdf5', verbose=1, save_best_only=True)
+    CNN_colours = colours.create_model(learning_rate=5 * 10 ** -6, n_classes=n_classes)
     print("fitting on colour model")
     array_test_colours = np.array(X_test_colours)
     history = CNN_colours.fit(np.array(X_train_colours), Y_train,
                               batch_size=400,
                               validation_data=(array_test_colours, Y_test),
                               epochs=1000, verbose=1, shuffle=True,
-                              callbacks=[checkpointer_colours,
-                                         EarlyStopping(patience=100)])
+                              callbacks=[checkpointer_colours, EarlyStopping(patience=100)])
     showing_infos_Windstorm.show_accuracy_over_time(history, "colour model")
     Y_test_pred_CNN_colours = CNN_colours.predict(np.array(X_test_colours))
     print(accuracies_metrics.mat_conf(Y_test, Y_test_pred_CNN_colours))
@@ -86,19 +82,15 @@ def fitting_pixel_difference_model(n_classes, X_train_pixelDifference, Y_train,
     checkpointer_pixel_diff = ModelCheckpoint(
         filepath='../Models/pixel_diff.hdf5',
         verbose=1, save_best_only=True)
-    CNN = diff_between_frames.create_model(
-        learning_rate=10 ** -7, n_classes=n_classes)
+    CNN = diff_between_frames.create_model(learning_rate=10 ** -7, n_classes=n_classes)
     print("fitting on pixel difference model")
     X_train = np.array(X_train_pixelDifference)
     validation_data = (np.array(X_test_pixelDifference), np.array(Y_test))
     history = CNN.fit(X_train, Y_train, validation_data=validation_data,
                       batch_size=400, epochs=1000, verbose=1, shuffle=True,
-                      callbacks=[checkpointer_pixel_diff,
-                                 EarlyStopping(patience=100)])
-    showing_infos_Windstorm.show_accuracy_over_time(
-        history, "pixel difference model")
-    Y_test_pred_CNN_pixel_diff = CNN.predict(
-        np.array(X_test_pixelDifference))
+                      callbacks=[checkpointer_pixel_diff, EarlyStopping(patience=100)])
+    showing_infos_Windstorm.show_accuracy_over_time(history, "pixel difference model")
+    Y_test_pred_CNN_pixel_diff = CNN.predict(np.array(X_test_pixelDifference))
     print(accuracies_metrics.mat_conf(Y_test, Y_test_pred_CNN_pixel_diff))
 
     CNN.load_weights("../Models/pixel_diff.hdf5")
@@ -108,8 +100,7 @@ def fitting_pixel_difference_model(n_classes, X_train_pixelDifference, Y_train,
 
 def get_checkpointer(name):
     """Return the checkpointer corresponding to the model."""
-    return ModelCheckpoint(filepath=get_path(
-        "Models", str(name) + '.hdf5'), verbose=1, save_best_only=True)
+    return ModelCheckpoint(filepath=get_path("Models", str(name) + '.hdf5'), verbose=1, save_best_only=True)
 
 
 def reduce_features(X, nb_final_features, start):
@@ -117,16 +108,8 @@ def reduce_features(X, nb_final_features, start):
 
     Used to choose on which features to train on.
     """
-    a = int(start)
-    b = int(start + nb_final_features)
-    print(a, b)
-
-    new_X = []
-    for grp_frames in X:
-        grp_frames = np.array(grp_frames)
-
-        new_X.append(grp_frames[:, a:b])
-    return new_X
+    a, b = int(start), int(start + nb_final_features)
+    return [np.array(grp_frames)[:, a:b] for grp_frames in X]
 
 
 def load_weights_LSTM_CNN(model, name_file):
@@ -166,10 +149,8 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
         else:
             start = 0
 
-        X_train_CNN_local = reduce_features(
-            X_train_CNN, nb_features, start=start)
-        X_test_CNN_local = reduce_features(
-            X_test_CNN, nb_features, start=start)
+        X_train_CNN_local = reduce_features(X_train_CNN, nb_features, start=start)
+        X_test_CNN_local = reduce_features(X_test_CNN, nb_features, start=start)
 
         LSTM_CNN.optimizer.lr.assign(10 ** -4)
         if i in models_to_fit:
@@ -197,34 +178,37 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
 def append_to_file(acc_vote_prob, acc_vote_class, acc_MLP,
                    acc_boosting, acc_MLP_class, acc_boosting_MLP_class, nb_features, nb_models):
     """Write the result of one exp into a text file."""
+    legend_acc = {}
+    legend_acc[" acc_vote_prob : "] = acc_vote_prob
+    legend_acc[" acc_vote_class : "] = acc_vote_class
+    legend_acc[" acc_MLP : "] = acc_MLP
+    legend_acc[" acc_boosting : "] = acc_boosting
+    legend_acc[" acc_MLP_class : "] = acc_MLP_class
+    legend_acc[" acc_boosting_MLP_class : "] = acc_boosting_MLP_class
+    legend_acc[" nb_features : "] = nb_features
+    legend_acc[" nb_models : "] = nb_models
+    ''.join(k + str(v) for k, v in legend_acc.items())
+
     with open('info_files/accuracies.txt', 'a') as f:
-        to_write = "acc_vote_prob: {0} acc_vote_class: {1} acc_MLP: {2} acc_boosting: {3} acc_MLP_class: {4} acc_boosting_MLP_class: {5} nb_models: {6} nb_features: {7} \n".format(
-            str(acc_vote_prob), str(acc_vote_class), str(acc_MLP),
-            str(acc_boosting), str(acc_MLP_class), str(acc_boosting_MLP_class), str(nb_models),
-            str(nb_features))
-        f.write(to_write)
-        f.close()
+        f.write(''.join(legend + str(acc_value) for legend, acc_value in legend_acc.items()))
 
 
-def get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote,
-             Y_test_pred_average_proba, n_models, Y_test_pred_boosting_MLP,
-             Y_test_pred_MLP_on_classes, Y_test_pred_boosting_MLP_on_classes):
+def get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average_proba, n_models,
+             Y_test_pred_boosting_MLP, Y_test_pred_MLP_on_classes, Y_test_pred_boosting_MLP_on_classes):
     """Get accs of different voting methods."""
-    acc_vote_prob = accuracies_metrics.mat_conf(
-        Y_test, Y_test_pred_assemble, "vote with probas predicted")
-    acc_vote_class = accuracies_metrics.mat_conf(
-        Y_test, Y_test_pred_vote, "vote with class predicted")
-    acc_MLP = accuracies_metrics.mat_conf(
-        Y_test, Y_test_pred_average_proba, " MLP on probas predicted")
+    acc_vote_prob = accuracies_metrics.mat_conf(Y_test, Y_test_pred_assemble, "vote with probas predicted")
+    acc_vote_class = accuracies_metrics.mat_conf(Y_test, Y_test_pred_vote, "vote with class predicted")
+    acc_MLP = accuracies_metrics.mat_conf(Y_test, Y_test_pred_average_proba, " MLP on probas predicted")
+    acc_MLP_class = accuracies_metrics.mat_conf(Y_test, Y_test_pred_MLP_on_classes, "MLP on class, predicted")
     acc_boosting = 0
     acc_boosting_MLP_class = 0
     if n_models != 1:
-        acc_boosting = accuracies_metrics.mat_conf(
-            Y_test, Y_test_pred_boosting_MLP, "boosting on probas predicted")
+        print(Y_test, Y_test_pred_boosting_MLP)
+        print(Y_test, Y_test_pred_boosting_MLP_on_classes)
+        acc_boosting = accuracies_metrics.mat_conf(Y_test, np.array(Y_test_pred_boosting_MLP),
+                                                   "boosting on probas predicted")
         acc_boosting_MLP_class = accuracies_metrics.mat_conf(
             Y_test, Y_test_pred_boosting_MLP_on_classes, "boosting on probas predicted")
-    acc_MLP_class = accuracies_metrics.mat_conf(
-        Y_test, Y_test_pred_MLP_on_classes, "MLP on class, predicted")
 
     return acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class
 
@@ -260,10 +244,8 @@ def one_iter(n_classes, n_models, nb_features, X_train_CNN, X_test_CNN,
                                   n_classes=n_classes, decay=0.01)
     validation_data = (X_test_assemble, np.array(Y_test))
     callbacks = [checkpointer_assemble, EarlyStopping(patience=300)]
-    history = model.fit(X_train_assemble, Y_train,
-                        validation_data=validation_data, batch_size=300,
-                        epochs=1800, verbose=1, shuffle=True,
-                        callbacks=callbacks)
+    history = model.fit(X_train_assemble, Y_train, validation_data=validation_data, batch_size=300,
+                        epochs=1800, verbose=1, shuffle=True, callbacks=callbacks)
     model.load_weights('../Models/assemble.hdf5')
     Y_test_pred_assemble = model.predict(X_test_assemble)
 
@@ -277,8 +259,7 @@ def one_iter(n_classes, n_models, nb_features, X_train_CNN, X_test_CNN,
                                            batch_size=300, epochs=1800, verbose=1,
                                            shuffle=True, callbacks=callbacks)
 
-    MLP_on_classes_predicted.load_weights(
-        '../Models/MLP_on_classes_predicted.hdf5')
+    MLP_on_classes_predicted.load_weights('../Models/MLP_on_classes_predicted.hdf5')
 
     Y_test_pred_vote = voting_methods.more_vote_wins(X_test_assemble, n_models, n_classes, accs)
     Y_test_pred_average_proba = voting_methods.more_prob_wins(X_test_assemble, n_models, n_classes, accs)
@@ -294,8 +275,7 @@ def one_iter(n_classes, n_models, nb_features, X_train_CNN, X_test_CNN,
     gc.collect()
 
     acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class = get_accs(
-        Y_test, Y_test_pred_assemble, Y_test_pred_vote,
-        Y_test_pred_average_proba, n_models, Y_test_pred_boosting_MLP,
+        Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average_proba, n_models, Y_test_pred_boosting_MLP,
         Y_test_pred_MLP_on_classes, Y_test_pred_boosting_MLP_on_classes)
     return acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class, nb_features, n_models
 
