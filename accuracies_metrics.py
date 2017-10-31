@@ -1,6 +1,7 @@
 """All functions about accuracy."""
 import data_processing
 from sklearn.metrics import confusion_matrix
+import numpy as np
 
 
 def percentage_accuracy_videos(Y_pred, Y_test, groups_frames_names):

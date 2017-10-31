@@ -100,7 +100,7 @@ def main(name_data_set, ratio_frames):
         video_names = data_processing.get_all_names_from_path(video_path)
         for video_name in video_names:
 
-            extract_frames_of(video_path + video_name, ratio_frames)
+            extract_frames_of(video_path + '/'+ video_name, ratio_frames)
             print("frames of : {0} extracted".format(str(video_name)))
 
 

@@ -132,7 +132,7 @@ def create_and_fit_model_boost(input_size, n_classes, X_test_boosting, Y_test, X
     validation_data = (X_test_boosting, np.array(Y_test))
     callbacks = [checkpointer_boosting, EarlyStopping(patience=800)]
     model.fit(X_train_boosting, Y_train, validation_data=validation_data,
-              batch_size=800, epochs=10, verbose=1, shuffle=True,
+              batch_size=800, epochs=1000, verbose=0, shuffle=True,
               callbacks=callbacks)
     model.load_weights('../Models/boosting_vote.hdf5')
     return model

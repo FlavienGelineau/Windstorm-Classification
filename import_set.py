@@ -171,9 +171,10 @@ def get_previous_set(path_to_pickle):
     return X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names
 
 
-def get_set(load_pickle, names_wanted="all"):
+def get_set(load_pickle, parameters):
     """Return train and test set of all different feature extractions."""
     path_to_pickle = "../Pickles/3TypesOfFeatures.pkl"  # data_processing.get_path("Pickles", "3TypesOfFeatures.pkl")
+    names_wanted=parameters.names_wanted
     if load_pickle:
         Set = pkl.load(open(path_to_pickle, "rb"))
         res = (Set[0], Set[1], Set[2], Set[3], Set[4], Set[5])
@@ -213,7 +214,7 @@ def get_set(load_pickle, names_wanted="all"):
 def make_train_test_set(X_features_CNN, X_features_pixelDifference,
                         X_features_colours, n_subvideos_per_video, Y,
                         groups_frames_names, percentage_testset,
-                        names_train_imposed=None):
+                        parameters):
     """Return all train and test set.
 
     We want to respect two constraints :
@@ -223,7 +224,7 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
     """
     names = list(set(groups_frames_names))
     labels = get_labels(names)
-
+    names_train_imposed = parameters.names_train
     indexs_1 = []
     indexs_0 = []
     for i in range(len(labels)):
