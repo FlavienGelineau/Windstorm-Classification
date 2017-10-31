@@ -138,8 +138,7 @@ def create_and_fit_model_boost(input_size, n_classes, X_test_boosting, Y_test, X
     return model
 
 
-def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test,
-                                 n_models, n_classes, n_models_together=2):
+def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test, n_models, n_classes, n_models_together=2):
     """Votes taken as an input into a MLP."""
     X_train_boosting = np.array(get_X_boosting_classes(X_train, n_classes, n_models))
     X_test_boosting = np.array(get_X_boosting_classes(X_test, n_classes, n_models))
@@ -149,8 +148,7 @@ def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test,
         X_train_fit = X_train_boosting[:, :n_models_together]
         X_test_fit = X_train_boosting[:, :n_models_together]
 
-        model = create_and_fit_model_boost(n_models_together, n_classes, X_test_fit, Y_test, X_train_fit,
-                                           Y_train)
+        model = create_and_fit_model_boost(n_models_together, n_classes, X_test_fit, Y_test, X_train_fit, Y_train)
         print("the model is fitted")
         Y_train_pred = model.predict_classes(X_train_fit).tolist()
         Y_train_pred = np.expand_dims(Y_train_pred, axis=1)
@@ -162,6 +160,5 @@ def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test,
 
             X_train_boosting = np.concatenate((Y_train_pred, X_train_boost_truncated), axis=1)
             X_test_boosting = np.concatenate((Y_test_pred, X_test_boost_truncated), axis=1)
-
 
     return Y_test_pred
