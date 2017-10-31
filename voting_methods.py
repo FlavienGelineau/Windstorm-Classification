@@ -146,7 +146,7 @@ def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test, n_models, n_c
     for i in range(2, n_models + 1):
         print("iteration {}".format(i))
         X_train_fit = X_train_boosting[:, :n_models_together]
-        X_test_fit = X_train_boosting[:, :n_models_together]
+        X_test_fit = X_test_boosting[:, :n_models_together]
 
         model = create_and_fit_model_boost(n_models_together, n_classes, X_test_fit, Y_test, X_train_fit, Y_train)
         print("the model is fitted")

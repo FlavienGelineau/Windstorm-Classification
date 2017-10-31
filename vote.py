@@ -200,7 +200,7 @@ def append_to_file(acc_vote_prob, acc_vote_class, acc_MLP,
     with open('info_files/accuracies.txt', 'a') as f:
         to_write = "acc_vote_prob: {0} acc_vote_class: {1} acc_MLP: {2} acc_boosting: {3} acc_MLP_class: {4} acc_boosting_MLP_class: {5} nb_models: {6} nb_features: {7} \n".format(
             str(acc_vote_prob), str(acc_vote_class), str(acc_MLP),
-            str(acc_boosting), str(acc_MLP_class), str(nb_models),
+            str(acc_boosting), str(acc_MLP_class), str(acc_boosting_MLP_class), str(nb_models),
             str(nb_features))
         f.write(to_write)
         f.close()
@@ -237,28 +237,21 @@ def one_iter(n_classes, n_models, nb_features, X_train_CNN, X_test_CNN,
     showing_infos_Windstorm.infos(Y_test, Y_train)
     Y_train, Y_test = np.array(Y_train), np.array(Y_test)
 
-    checkpointer_assemble = ModelCheckpoint(
-        filepath='../Models/assemble.hdf5', verbose=1,
-        save_best_only=True, monitor='val_acc')
+    checkpointer_assemble = ModelCheckpoint(filepath='../Models/assemble.hdf5', verbose=1,
+                                            save_best_only=True, monitor='val_acc')
 
-    checkpointer_MLP_class_predicted = get_checkpointer(
-        "MLP_on_classes_predicted")
+    checkpointer_MLP_class_predicted = get_checkpointer("MLP_on_classes_predicted")
     checkpointer_assemble = get_checkpointer("assemble")
     models_to_fit = [i for i in range(n_models)]
     models_to_fit = []
     train_preds, test_preds, accs = bagging_LSTM(
-        n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
-        Y_train, Y_test, nb_features)
+        n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN, Y_train, Y_test, nb_features)
 
-    X_train_assemble = import_set.get_assemble_set(
-        train_preds, n_classes, Y_train)
-    X_test_assemble = import_set.get_assemble_set(
-        test_preds, n_classes, Y_train)
+    X_train_assemble = import_set.get_assemble_set(train_preds, n_classes, Y_train)
+    X_test_assemble = import_set.get_assemble_set(test_preds, n_classes, Y_train)
 
-    X_train_classes_predicted = voting_methods.X_probas_to_X_class(
-        X_train_assemble, n_models, n_classes)
-    X_test_classes_predicted = voting_methods.X_probas_to_X_class(
-        X_test_assemble, n_models, n_classes)
+    X_train_classes_predicted = voting_methods.X_probas_to_X_class(X_train_assemble, n_models, n_classes)
+    X_test_classes_predicted = voting_methods.X_probas_to_X_class(X_test_assemble, n_models, n_classes)
     # ###################### Assemble Learning ##############################
 
     print("assemble model")
