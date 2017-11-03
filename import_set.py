@@ -33,6 +33,14 @@ def get_labels(video_names):
     return labels
 
 
+class Data_sets:
+    def __init__(self, X_train, X_test):
+        self.X_train = X_train
+        self.X_test = X_test
+        self.Y_train = None
+        self.Y_test = None
+
+
 def make_Y(labels, n_groups_of_frames_per_video):
     """Make Y set with the labels.
 
@@ -42,8 +50,7 @@ def make_Y(labels, n_groups_of_frames_per_video):
     with n = the number of subvideos corresponding to the video labelled.
     """
 
-    return sum(([label] * n_groups_of_frame
-                for label, n_groups_of_frame in
+    return sum(([label] * n_groups_of_frame for label, n_groups_of_frame in
                 zip(labels, n_groups_of_frames_per_video)),
                [])
 
@@ -174,7 +181,7 @@ def get_previous_set(path_to_pickle):
 def get_set(load_pickle, parameters):
     """Return train and test set of all different feature extractions."""
     path_to_pickle = "../Pickles/3TypesOfFeatures.pkl"  # data_processing.get_path("Pickles", "3TypesOfFeatures.pkl")
-    names_wanted=parameters.names_wanted
+    names_wanted = parameters.names_wanted
     if load_pickle:
         Set = pkl.load(open(path_to_pickle, "rb"))
         res = (Set[0], Set[1], Set[2], Set[3], Set[4], Set[5])
@@ -185,8 +192,7 @@ def get_set(load_pickle, parameters):
             path_to_pickle)
 
         if names_wanted == "all":
-            all_names = data_processing.get_all_names_from_path(
-                "Windstorm/videos")
+            all_names = data_processing.get_all_names_from_path("Windstorm/videos")
         else:
             all_names = names_wanted
 
@@ -200,12 +206,13 @@ def get_set(load_pickle, parameters):
                                         X_features_colours,
                                         n_subvideos_per_video)
 
-        feature_result = get_features(names_to_pickle)
+        X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names = get_features(
+            names_to_pickle)
 
         pkl.dump((X_features_CNN, X_features_pixelDifference,
                   X_features_colours, n_subvideos_per_video,
                   Y, groups_frames_names),
-                 open(path_to_pickle + "/3TypesOfFeatures.pkl", "wb"))
+                 open(path_to_pickle, "wb"))
 
         return_extracted_set(X_features_CNN, X_features_pixelDifference,
                              X_features_colours, n_subvideos_per_video)
@@ -258,12 +265,9 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
 
         return train, test
 
-    X_train_CNN, X_test_CNN = train_test_attribution(
-        X_features_CNN, names_train, groups_frames_names)
-    X_train_pixelDifference, X_test_pixelDifference = train_test_attribution(
-        X_features_pixelDifference, names_train, groups_frames_names)
-    X_train_colours, X_test_colours = train_test_attribution(
-        X_features_colours, names_train, groups_frames_names)
+    cnn_features_extracted = Data_sets(*train_test_attribution(X_features_CNN, names_train, groups_frames_names))
+    pixel_difference = Data_sets(*train_test_attribution(X_features_pixelDifference, names_train, groups_frames_names))
+    colours = Data_sets(*train_test_attribution(X_features_colours, names_train, groups_frames_names))
 
     Y_train, Y_test = train_test_attribution(
         Y, names_train, groups_frames_names)
@@ -272,19 +276,21 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
     groups_frames_names_train, groups_frames_names_test = train_test_attribution(
         groups_frames_names, names_train, groups_frames_names)
 
-    return X_train_CNN, X_test_CNN, X_train_pixelDifference, X_test_pixelDifference, X_train_colours, X_test_colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test
+    return cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test
 
 
-def get_assemble_set(preds, n_classes, Y_train):
-    """Make a Train set for voting, given prediction done by the models."""
-    X_assemble = []
-    for i in range(len(preds[0])):
-        sublist = []
-        for j in range(len(preds)):
-            sublist += preds[j][i].tolist()
-        X_assemble.append(sublist)
-    return X_assemble
+def get_assemble_set(preds):
+    """Make a set for voting, given prediction done by the models."""
+    def create_one_assemble(preds):
+        X_assemble=[]
+        for i in range(len(preds[0])):
+            sublist = []
+            for j in range(len(preds)):
+                sublist += preds[j][i].tolist()
+            X_assemble.append(sublist)
+        return X_assemble
 
+    return Data_sets(create_one_assemble(preds.X_train), create_one_assemble(preds.X_test))
 
 def get_names_train():
     """Return a list of names_train."""

@@ -1,7 +1,6 @@
 """All functions about accuracy."""
 import data_processing
 from sklearn.metrics import confusion_matrix
-import numpy as np
 
 
 def percentage_accuracy_videos(Y_pred, Y_test, groups_frames_names):
@@ -32,10 +31,8 @@ def handmade_valacc(Y_pred, Y_test):
 
 def mat_conf(Y_test, Y_pred, name=""):
     """Show confusion matrix and accuracy on test set."""
-    try:
+    if type(Y_pred[0])!=int:
         Y_pred = data_processing.max_in_each_list(Y_pred)
-    except:
-        pass
 
     Y_test_mat_conf = data_processing.position_of_1_in_sublists(Y_test)
 

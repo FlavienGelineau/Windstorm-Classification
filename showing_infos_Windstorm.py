@@ -5,6 +5,7 @@ from data_processing import position_of_1_in_sublists
 import accuracies_metrics
 import numpy as np
 
+
 def infos(Y_test, Y_train):
     """Show infos about the set composition."""
     Y_test_set = position_of_1_in_sublists(Y_test)
@@ -58,6 +59,14 @@ def show_accuracy_over_time(history, title):
     plt.show()
 
 
+def print_with_lines(message):
+    print("-------------------------------------------------------------")
+    print("-------------------------------------------------------------")
+    print(message)
+    print("-------------------------------------------------------------")
+    print("-------------------------------------------------------------")
+
+
 def get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average_proba, n_models,
              Y_test_pred_boosting_MLP, Y_test_pred_MLP_on_classes, Y_test_pred_boosting_MLP_on_classes):
     """Get accs of different voting methods."""
@@ -70,6 +79,7 @@ def get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average
     if n_models != 1:
         acc_boosting = accuracies_metrics.mat_conf(Y_test, np.array(Y_test_pred_boosting_MLP),
                                                    "boosting on probas predicted")
+        print(Y_test_pred_boosting_MLP_on_classes)
         acc_boosting_MLP_class = accuracies_metrics.mat_conf(
             Y_test, np.array(Y_test_pred_boosting_MLP_on_classes), "boosting on class predicted")
 

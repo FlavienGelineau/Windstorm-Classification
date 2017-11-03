@@ -130,9 +130,7 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
     train_preds = []
     test_preds = []
     accs = []
-    LSTM_CNN = LSTMwithKeras.lstm(
-        shape=(15, nb_features), n_classes=n_classes,
-        learning_rate=10 ** -4, decay=0.01)
+    LSTM_CNN = LSTMwithKeras.lstm(shape=(15, nb_features), n_classes=n_classes, learning_rate=10 ** -4, decay=0.01)
     path_initial_weights = get_path("Models", "Initial_weights_LSTM_CNN.hdf5")
     LSTM_CNN.save_weights(path_initial_weights)
     for i in range(n_models):
@@ -169,7 +167,8 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
         train_preds.append(Y_train_pred_LSTM)
         test_preds.append(Y_test_pred_LSTM)
     del LSTM_CNN, checkpointer
-    return train_preds, test_preds, accs
+
+    return import_set.Data_sets(train_preds, test_preds), accs
 
 
 # ################Creating models ###########################
@@ -202,8 +201,7 @@ class Accuracies:
             f.write(''.join(legend + str(acc_value) for legend, acc_value in self.legend_acc.items()))
 
 
-def one_iter(X_train_CNN, X_test_CNN, X_train_pixelDifference, X_test_pixelDifference, X_train_colours,
-             X_test_colours, Y_train, Y_test, parameters):
+def one_iter(cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, parameters):
     """Test all voting methods once LSTM model have been trained."""
     nb_class = parameters.nb_class
     nb_model = parameters.nb_model
@@ -215,36 +213,29 @@ def one_iter(X_train_CNN, X_test_CNN, X_train_pixelDifference, X_test_pixelDiffe
     checkpointer_MLP_class_predicted = get_checkpointer("MLP_on_classes_predicted")
     checkpointer_assemble = get_checkpointer("assemble")
 
-    train_preds, test_preds, accs = bagging_LSTM(
-        nb_model, nb_class, parameters.models_to_fit, X_train_CNN, X_test_CNN, Y_train, Y_test, nb_feature)
+    predictions, accs = bagging_LSTM(
+        nb_model, nb_class, parameters.models_to_fit, cnn_features_extracted.X_train, cnn_features_extracted.X_test,
+        Y_train, Y_test, nb_feature)
 
-    X_train_assemble = import_set.get_assemble_set(train_preds, nb_class, Y_train)
-    X_test_assemble = import_set.get_assemble_set(test_preds, nb_class, Y_train)
+    assemble_set = import_set.get_assemble_set(predictions)
 
-    X_train_classes_predicted = voting_methods.X_probas_to_X_class(X_train_assemble, nb_model, nb_class)
-    X_test_classes_predicted = voting_methods.X_probas_to_X_class(X_test_assemble, nb_model, nb_class)
+    X_train_classes_predicted = voting_methods.X_probas_to_X_class(assemble_set.X_train, nb_model, nb_class)
+    X_test_classes_predicted = voting_methods.X_probas_to_X_class(assemble_set.X_test, nb_model, nb_class)
     # ###################### Assemble Learning ##############################
 
-    print("-------------------------------------------------------------")
-    print("-------------------------------------------------------------")
-    print("MLP model : a MLP learning on previous predictions (probabilities) ")
-    print("-------------------------------------------------------------")
-    print("-------------------------------------------------------------")
+    showing_infos_Windstorm.print_with_lines("MLP model : a MLP learning on previous predictions (probabilities) ")
+
     model = create_assemble_model(learning_rate=10 ** -3,
                                   input_size=nb_model * nb_class,
                                   n_classes=nb_class, decay=0.01)
-    validation_data = (X_test_assemble, np.array(Y_test))
+    validation_data = (assemble_set.X_test, np.array(Y_test))
     callbacks = [checkpointer_assemble, EarlyStopping(patience=300)]
-    history = model.fit(X_train_assemble, Y_train, validation_data=validation_data, batch_size=300,
+    history = model.fit(assemble_set.X_train, Y_train, validation_data=validation_data, batch_size=300,
                         epochs=1800, verbose=1, shuffle=True, callbacks=callbacks)
     model.load_weights('../Models/assemble.hdf5')
-    Y_test_pred_assemble = model.predict(X_test_assemble)
+    Y_test_pred_assemble = model.predict(assemble_set.X_test)
+    showing_infos_Windstorm.print_with_lines("MLP model : MLP learning on class predicted ")
 
-    print("-------------------------------------------------------------")
-    print("-------------------------------------------------------------")
-    print("MLP model : MLP learning on class predicted ")
-    print("-------------------------------------------------------------")
-    print("-------------------------------------------------------------")
     MLP_on_classes_predicted = create_assemble_model(learning_rate=10 ** -3, input_size=nb_model,
                                                      n_classes=nb_class, decay=0.01)
     validation_data = (X_test_classes_predicted, np.array(Y_test))
@@ -255,33 +246,28 @@ def one_iter(X_train_CNN, X_test_CNN, X_train_pixelDifference, X_test_pixelDiffe
 
     MLP_on_classes_predicted.load_weights('../Models/MLP_on_classes_predicted.hdf5')
 
-    Y_test_pred_vote = voting_methods.more_vote_wins(X_test_assemble, nb_model, nb_class, accs)
-    Y_test_pred_average_proba = voting_methods.more_prob_wins(X_test_assemble, nb_model, nb_class, accs)
+    Y_test_pred_vote = voting_methods.more_vote_wins(assemble_set.X_test, nb_model, nb_class, accs)
+    Y_test_pred_average_proba = voting_methods.more_prob_wins(assemble_set.X_test, nb_model, nb_class, accs)
     Y_test_pred_MLP_on_classes = MLP_on_classes_predicted.predict(X_test_classes_predicted)
     if nb_model != 1:
-        print("-------------------------------------------------------------")
-        print("-------------------------------------------------------------")
-        print("Boosting with MLP : boosting with probabilities predicted")
-        print("-------------------------------------------------------------")
-        print("-------------------------------------------------------------")
-        Y_test_pred_boosting_MLP = voting_methods.boosting_MLP(
-            X_train_assemble, X_test_assemble, Y_train, Y_test, nb_model, nb_class)
+        showing_infos_Windstorm.print_with_lines("Boosting with MLP : boosting with probabilities predicted")
 
-        print("-------------------------------------------------------------")
-        print("-------------------------------------------------------------")
-        print("Boosting with MLP : boosting with class predicted")
-        print("-------------------------------------------------------------")
-        print("-------------------------------------------------------------")
+        Y_test_pred_boosting_MLP = voting_methods.boosting_MLP(
+            assemble_set.X_train, assemble_set.X_test, Y_train, Y_test, nb_model, nb_class)
+        showing_infos_Windstorm.print_with_lines("Boosting with MLP : boosting with class predicted")
+
         Y_test_pred_boosting_MLP_on_classes = voting_methods.boosting_MLP_class_predicted(
-            np.array(X_train_assemble), X_test_assemble, Y_train, Y_test, nb_model, nb_class, n_models_together=2)
+            np.array(assemble_set.X_train), assemble_set.X_test, Y_train, Y_test, nb_model, nb_class,
+            n_models_together=2)
 
     del model, history
     gc.collect()
-    print(np.array(Y_test_pred_boosting_MLP_on_classes))
-    acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class = showing_infos_Windstorm.get_accs(
-        Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average_proba, nb_model,
-        Y_test_pred_boosting_MLP, Y_test_pred_MLP_on_classes, Y_test_pred_boosting_MLP_on_classes)
-    accuracies = Accuracies(acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class)
+
+    accuracies = Accuracies(
+        *showing_infos_Windstorm.get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average_proba,
+                                          nb_model,
+                                          Y_test_pred_boosting_MLP, Y_test_pred_MLP_on_classes,
+                                          Y_test_pred_boosting_MLP_on_classes))
     return accuracies
 
 
@@ -296,17 +282,11 @@ def main():
                                     nb_feature=nb_feature, names_wanted=import_set.get_names_train(),
                                     models_to_fit=[])
 
-            X_train_CNN, X_test_CNN, X_train_pixelDifference, X_test_pixelDifference, X_train_colours, X_test_colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test = import_set.make_train_test_set(
+            cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test = import_set.make_train_test_set(
                 *import_set.get_set(load_pickle=True, parameters=parameters),
-                percentage_testset=0.2,
-                parameters=parameters)
+                percentage_testset=0.2, parameters=parameters)
 
-            accuracies = one_iter(
-                X_train_CNN, X_test_CNN,
-                X_train_pixelDifference, X_test_pixelDifference,
-                X_train_colours, X_test_colours,
-                Y_train, Y_test,
-                parameters)
+            accuracies = one_iter(cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, parameters)
             accuracies.append_to_file(parameters)
 
 

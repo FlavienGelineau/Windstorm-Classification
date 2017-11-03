@@ -1,13 +1,13 @@
 """Test the colour feature extraction."""
 from PIL import Image
 
-
 from keras.optimizers import Adam
-
 
 from keras.models import Sequential
 from keras.layers import Conv1D, GlobalAveragePooling1D
 from keras.layers import Dense
+
+print("We just entered in the colour file")
 
 
 def get_colours(img1):
@@ -37,7 +37,8 @@ def arrange_colour_list(list_colours, error, n_pixels):
     colours = []
     for elt in list_colours:
         colours.append([elt[0] * (100 / n_pixels), (round_to_nearest_multiple(elt[1][0], error),
-                                                    round_to_nearest_multiple(elt[1][1], error), round_to_nearest_multiple(elt[1][2], error))])
+                                                    round_to_nearest_multiple(elt[1][1], error),
+                                                    round_to_nearest_multiple(elt[1][2], error))])
 
     new_coulour_list = []
     frequence_list = []
@@ -52,6 +53,7 @@ def arrange_colour_list(list_colours, error, n_pixels):
     for i in range(len(frequence_list)):
         res.append((frequence_list[i], new_coulour_list[i]))
     return res
+
 
 # We extract the 5 more commun colours of the  group of frames.
 
@@ -71,7 +73,6 @@ def get_colour_features(X_, frame_shape):
 
 
 def create_model(learning_rate, n_classes):
-
     model = Sequential()
     model.add(Conv1D(1000, 3, activation='relu', input_shape=(5, 4)))
     model.add(GlobalAveragePooling1D())
