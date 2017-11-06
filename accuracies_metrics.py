@@ -31,11 +31,12 @@ def handmade_valacc(Y_pred, Y_test):
 
 def mat_conf(Y_test, Y_pred, name=""):
     """Show confusion matrix and accuracy on test set."""
-    if type(Y_pred[0])!=int:
-        Y_pred = data_processing.max_in_each_list(Y_pred)
-
+    if type(Y_pred[0])!=int: # Thus Y_pred[0] is an array or a list
+        if len(Y_pred[0])>1:
+            Y_pred = data_processing.max_in_each_list(Y_pred)
+        else:
+            Y_pred = [pred[0] for pred in Y_pred]
     Y_test_mat_conf = data_processing.position_of_1_in_sublists(Y_test)
-
     cm = confusion_matrix(Y_pred, Y_test_mat_conf)
     print("confusion matrix for test set {}".format(name))
     print(cm)

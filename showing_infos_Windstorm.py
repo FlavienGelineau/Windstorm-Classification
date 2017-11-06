@@ -79,8 +79,7 @@ def get_accs(Y_test, Y_test_pred_assemble, Y_test_pred_vote, Y_test_pred_average
     if n_models != 1:
         acc_boosting = accuracies_metrics.mat_conf(Y_test, np.array(Y_test_pred_boosting_MLP),
                                                    "boosting on probas predicted")
-        print(Y_test_pred_boosting_MLP_on_classes)
         acc_boosting_MLP_class = accuracies_metrics.mat_conf(
-            Y_test, np.array(Y_test_pred_boosting_MLP_on_classes), "boosting on class predicted")
+            Y_test, Y_test_pred_boosting_MLP_on_classes, "boosting on class predicted")
 
     return acc_vote_prob, acc_vote_class, acc_MLP, acc_boosting, acc_MLP_class, acc_boosting_MLP_class

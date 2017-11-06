@@ -1,14 +1,14 @@
 """Test the colour feature extraction."""
 from PIL import Image
-
 from keras.optimizers import Adam
-
 from keras.models import Sequential
 from keras.layers import Conv1D, GlobalAveragePooling1D
 from keras.layers import Dense
+import numpy as np
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 
-print("We just entered in the colour file")
-
+import showing_infos_Windstorm
+import accuracies_metrics
 
 def get_colours(img1):
     img1 = Image.fromarray(img1, 'RGB')
@@ -89,3 +89,26 @@ def create_model(learning_rate, n_classes):
     model.load_weights("Windstorm/Models/colours.hdf5")
 
     return model
+
+
+def fitting_colour_model(n_classes, X_train_colours, X_test_colours, Y_train,
+                         Y_test):
+    """Create and fit model to be trained on colours.
+
+    Currently, does not give good results at all.
+    """
+    checkpointer_colours = ModelCheckpoint(filepath='../Models/colours.hdf5', verbose=1, save_best_only=True)
+    CNN_colours = create_model(learning_rate=5 * 10 ** -6, n_classes=n_classes)
+    print("fitting on colour model")
+    array_test_colours = np.array(X_test_colours)
+    history = CNN_colours.fit(np.array(X_train_colours), Y_train,
+                              batch_size=400,
+                              validation_data=(array_test_colours, Y_test),
+                              epochs=1000, verbose=1, shuffle=True,
+                              callbacks=[checkpointer_colours, EarlyStopping(patience=100)])
+    showing_infos_Windstorm.show_accuracy_over_time(history, "colour model")
+    Y_test_pred_CNN_colours = CNN_colours.predict(np.array(X_test_colours))
+    print(accuracies_metrics.mat_conf(Y_test, Y_test_pred_CNN_colours))
+    CNN_colours.load_weights("../Models/colours.hdf5")
+    Y_train_pred_CNN_colours = CNN_colours.predict(np.array(X_train_colours))
+    return Y_train_pred_CNN_colours

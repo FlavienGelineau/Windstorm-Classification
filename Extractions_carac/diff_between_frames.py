@@ -15,6 +15,10 @@ import video_processing
 from keras.layers import Activation, LSTM
 from keras.layers import Conv2D, MaxPooling2D, Flatten
 from keras.layers.wrappers import TimeDistributed
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+
+import showing_infos_Windstorm
+import accuracies_metrics
 
 
 def coulours_to_bw(data):
@@ -185,6 +189,34 @@ def CNN_LSTM_from_scratch(X_train):
                   optimizer='adam',
                   metrics=['accuracy'])
     return model
+
+
+
+def fitting_pixel_difference_model(n_classes, X_train_pixelDifference, Y_train,
+                                   X_test_pixelDifference, Y_test):
+    """Create and fit model to be trained on pixel difference model.
+
+    The feature extraction is done by putting all frames into black and white,
+    and by only writing the colour difference between two frames.
+    Currently, does not give good results at all.
+    """
+    checkpointer_pixel_diff = ModelCheckpoint(
+        filepath='../Models/pixel_diff.hdf5',
+        verbose=1, save_best_only=True)
+    CNN = create_model(learning_rate=10 ** -7, n_classes=n_classes)
+    print("fitting on pixel difference model")
+    X_train = np.array(X_train_pixelDifference)
+    validation_data = (np.array(X_test_pixelDifference), np.array(Y_test))
+    history = CNN.fit(X_train, Y_train, validation_data=validation_data,
+                      batch_size=400, epochs=1000, verbose=1, shuffle=True,
+                      callbacks=[checkpointer_pixel_diff, EarlyStopping(patience=100)])
+    showing_infos_Windstorm.show_accuracy_over_time(history, "pixel difference model")
+    Y_test_pred_CNN_pixel_diff = CNN.predict(np.array(X_test_pixelDifference))
+    accuracies_metrics.mat_conf(Y_test, Y_test_pred_CNN_pixel_diff)
+
+    CNN.load_weights("../Models/pixel_diff.hdf5")
+    Y_train_pred_CNN_pixel_diff = CNN.predict(X_train)
+    return Y_train_pred_CNN_pixel_diff
 
 
 def generate_arrays_from_file(all_names, batch_size):

@@ -44,3 +44,7 @@ def position_of_1_in_sublists(Y):
 def max_in_each_list(Y):
     """Return the position of the max element in each sublist."""
     return [Y[i].tolist().index(max(Y[i])) for i in range(len(Y))]
+
+
+def concat(l1, l2):
+    return np.array([l1[i] + l2[i] for i in range(len(l1))])
