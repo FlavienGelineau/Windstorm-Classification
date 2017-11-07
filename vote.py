@@ -56,7 +56,10 @@ def predict_with_MLP(input_size, nb_class, assemble_set, Y_train, Y_test, messag
     callbacks = [checkpointer, EarlyStopping(patience=300)]
     history = MLP_on_proba_predicted.fit(assemble_set.X_train, Y_train, validation_data=validation_data, batch_size=300,
                                          epochs=1800, verbose=0, shuffle=True, callbacks=callbacks)
-    MLP_on_proba_predicted.load_weights('../Models/assemble.hdf5')
+    try:
+        MLP_on_proba_predicted.load_weights('../Models/assemble.hdf5')
+    except:
+        print("Weights have not been found.")
     Y_pred = MLP_on_proba_predicted.predict(assemble_set.X_test)
     return Y_pred
 
@@ -138,11 +141,10 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
 
 
 class Parameters:
-    def __init__(self, nb_model, nb_class, names_train, names_wanted, nb_feature, models_to_fit):
+    def __init__(self, nb_model, nb_class, names_train, nb_feature, models_to_fit):
         self.nb_model = nb_model
         self.nb_class = nb_class
         self.names_train = names_train
-        self.names_wanted = names_wanted
         self.nb_feature = nb_feature
         self.models_to_fit = models_to_fit
 
@@ -170,7 +172,10 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
     nb_model = parameters.nb_model
     nb_feature = parameters.nb_feature
 
-    showing_infos_Windstorm.infos(Y_test, Y_train)
+    try:
+        showing_infos_Windstorm.infos(Y_test, Y_train)
+    except:
+        print("you need to have at least one video of each label.")
     Y_train, Y_test = np.array(Y_train), np.array(Y_test)
 
     predictions, accs = bagging_LSTM(
@@ -178,6 +183,10 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
         Y_train, Y_test, nb_feature)
 
     assemble_set = import_set.get_assemble_set(predictions)
+    assemble_class_set = import_set.Data_sets(
+        voting_methods.X_probas_to_X_class(assemble_set.X_train, nb_model, nb_class),
+        voting_methods.X_probas_to_X_class(assemble_set.X_test, nb_model, nb_class)
+    )
 
     # ###################### Assemble Learning ##############################
 
@@ -185,7 +194,7 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
         nb_model * nb_class, nb_class, assemble_set, Y_train, Y_test,
         message="MLP model : a MLP learning on previous predictions (probabilities) ")
     Y_test_pred_MLP_on_classes = predict_with_MLP(
-        nb_model, nb_class, assemble_set, Y_train, Y_test,
+        nb_model, nb_class, assemble_class_set, Y_train, Y_test,
         message="MLP model : MLP learning on class predicted ")
 
     Y_test_pred_vote = voting_methods.more_vote_wins(assemble_set.X_test, nb_model, nb_class, accs)
@@ -210,17 +219,15 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
 def main():
     """Launch the global programm."""
 
-    nb_models = [8]
+    nb_models = [3]
     nb_features = [512]
     for nb_model in nb_models:
         for nb_feature in nb_features:
             parameters = Parameters(nb_model=nb_model, nb_class=3, names_train=import_set.get_names_train(),
-                                    nb_feature=nb_feature, names_wanted=import_set.get_names_train(),
-                                    models_to_fit=[])
+                                    nb_feature=nb_feature, models_to_fit=[])
 
             cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test = import_set.make_train_test_set(
-                *import_set.get_set(load_pickle=True, parameters=parameters),
-                percentage_testset=0.2, parameters=parameters)
+                *import_set.get_set(load_pickle=False, parameters=parameters), percentage_testset=0.2, parameters=parameters)
 
             accuracies = one_iter(cnn_features_extracted, Y_train, Y_test, parameters)
             accuracies.append_to_file(parameters)

@@ -62,5 +62,5 @@ def main(path):
 
 
 if __name__ == '__main__':
-    path = 'Videos'
+    path = '../../Videos'
     main(path)

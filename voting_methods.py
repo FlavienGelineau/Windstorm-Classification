@@ -108,6 +108,21 @@ def boosting_MLP(X_train, X_test, Y_train, Y_test, n_models, n_classes):
     return Y_test_pred
 
 
+def X_probas_to_X_class(X, n_models, n_classes):
+    res = []
+    for line in X:
+        preds = []
+        for i in range(n_models):
+            sub_pred = [line[n_classes * i:n_classes * (i + 1)]]
+            pred = sub_pred.index(max(sub_pred))
+            preds.append(pred)
+        assert len(preds) == n_models
+
+        res.append(preds)
+
+    return res
+
+
 def boosting_MLP_class_predicted(X_train, X_test, Y_train, Y_test, n_models, n_classes, n_models_together=2):
     """Votes taken as an input into a MLP."""
 

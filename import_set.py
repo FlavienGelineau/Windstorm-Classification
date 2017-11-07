@@ -63,20 +63,9 @@ def get_Y(names, n_groups_of_frames_per_video, n_classes):
     return Y
 
 
-def get_features_from_one_video(video_name, names):
-    """Return features from one video."""
-    print("video : ", video_name, ", number ", 1 +
-          names.index(video_name), "for ", len(names))
-    video, n_frames_per_video = video_processing.get_a_video_as_array(
-        size=(299, 299), prefix="../Videos/", frames_per_sample=15,
-        video_name=video_name)
-
-    X_features_CNN_loc = LSTMwithKeras.set_to_features(video)
-    X_features_pixelDifference_loc = diff_between_frames.move_extraction(
-        video, frames_per_sample=15)
-    X_features_colours_loc = colours.get_colour_features(
-        video, frame_shape=(299, 299))
-
+def print_infos_about_features_extracted(X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc,
+                                         X_features_CNN, X_features_pixelDifference, X_features_colours,
+                                         n_subvideos_per_video):
     print("len of X_features_CNN_loc ", len(X_features_CNN_loc))
     print("len of X_features_pixelDifference_loc ",
           len(X_features_pixelDifference_loc))
@@ -89,6 +78,23 @@ def get_features_from_one_video(video_name, names):
     print("len of X_features_colours", len(X_features_colours))
     print("len of n_subvideos_per_video ", len(n_subvideos_per_video))
 
+
+def get_features_from_one_video(video_name, names, X_features_CNN, X_features_pixelDifference, X_features_colours,
+                                n_subvideos_per_video):
+    """Return features from one video."""
+    print("video : ", video_name, ", number ", 1 +
+          names.index(video_name), "for ", len(names))
+    video, n_frames_per_video = video_processing.get_a_video_as_array(
+        size=(299, 299), prefix="../Videos/", frames_per_sample=15, video_name=video_name)
+
+    X_features_CNN_loc = LSTMwithKeras.set_to_features(video)
+    X_features_pixelDifference_loc = diff_between_frames.move_extraction(
+        video, frames_per_sample=15)
+    X_features_colours_loc = colours.get_colour_features(video, frame_shape=(299, 299))
+
+    print_infos_about_features_extracted(X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc,
+                                         X_features_CNN, X_features_pixelDifference, X_features_colours,
+                                         n_subvideos_per_video)
     return X_features_CNN_loc, list(
         X_features_pixelDifference_loc), X_features_colours_loc, n_frames_per_video
 
@@ -102,7 +108,7 @@ def get_features(names, n_classes=3):
 
     for video_name in names:
         X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc, n_frames_per_video = get_features_from_one_video(
-            video_name, names)
+            video_name, names, X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video)
 
         X_features_CNN += X_features_CNN_loc
         X_features_pixelDifference += list(X_features_pixelDifference_loc)
@@ -119,15 +125,13 @@ def get_features(names, n_classes=3):
             n_subvideos_per_video, Y, groups_frames_names)
 
 
-def return_extracted_set(X_features_CNN, X_features_pixelDifference,
-                         X_features_colours, n_subvideos_per_video):
+def print_infos_about_set(X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video):
     print("--------------------- Final Set ----------------------")
     print("len of X_features_CNN ", len(X_features_CNN))
     print("len of X_features_pixelDifference",
           len(X_features_pixelDifference))
     print("len of X_features_colours", len(X_features_colours))
     print("len of n_subvideos_per_video ", len(n_subvideos_per_video))
-    return X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names
 
 
 def combine_previous_sets_with_recent(feature_result, X_features_CNN,
@@ -161,8 +165,7 @@ def get_previous_set(path_to_pickle):
     """Try to get previous features, else, return empty files."""
 
     try:
-        Set = pkl.load(
-            open(path_to_pickle + "/3TypesOfFeatures.pkl", "rb"))
+        Set = pkl.load(open(path_to_pickle, "rb"))
         X_features_CNN = Set[0]
         X_features_pixelDifference = Set[1]
         X_features_colours = Set[2]
@@ -181,41 +184,36 @@ def get_previous_set(path_to_pickle):
 def get_set(load_pickle, parameters):
     """Return train and test set of all different feature extractions."""
     path_to_pickle = "../Pickles/3TypesOfFeatures.pkl"  # data_processing.get_path("Pickles", "3TypesOfFeatures.pkl")
-    names_wanted = parameters.names_wanted
+
     if load_pickle:
         Set = pkl.load(open(path_to_pickle, "rb"))
         res = (Set[0], Set[1], Set[2], Set[3], Set[4], Set[5])
         return res
 
     else:
-        X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names = get_previous_set(
-            path_to_pickle)
-
-        if names_wanted == "all":
-            all_names = data_processing.get_all_names_from_path("Windstorm/videos")
-        else:
-            all_names = names_wanted
-
+        previous_set = get_previous_set(path_to_pickle)
+        groups_frames_names = previous_set[-1]
+        names_of_video_folder = data_processing.get_all_names_from_path("../Videos")
         names_already_pickled = list(set(groups_frames_names))
-
-        names_to_pickle = list(set(all_names) - set(names_already_pickled))
+        names_to_pickle = [name for name in names_of_video_folder if name not in names_already_pickled]
 
         if len(names_to_pickle) == 0:
-            return return_extracted_set(X_features_CNN,
-                                        X_features_pixelDifference,
-                                        X_features_colours,
-                                        n_subvideos_per_video)
+            return previous_set
 
-        X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names = get_features(
+        X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc, n_subvideos_per_video_loc, Y_loc, groups_frames_names_loc = get_features(
             names_to_pickle)
+        X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y, groups_frames_names = combine_previous_sets_with_recent(
+            previous_set, X_features_CNN_loc, X_features_pixelDifference_loc, X_features_colours_loc,
+            n_subvideos_per_video_loc, Y_loc, groups_frames_names_loc
+        )
 
-        pkl.dump((X_features_CNN, X_features_pixelDifference,
-                  X_features_colours, n_subvideos_per_video,
-                  Y, groups_frames_names),
+        pkl.dump((X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y,
+                  groups_frames_names),
                  open(path_to_pickle, "wb"))
-
-        return_extracted_set(X_features_CNN, X_features_pixelDifference,
-                             X_features_colours, n_subvideos_per_video)
+        print_infos_about_set(X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video)
+        return (
+            X_features_CNN, X_features_pixelDifference, X_features_colours, n_subvideos_per_video, Y,
+            groups_frames_names)
 
 
 def make_train_test_set(X_features_CNN, X_features_pixelDifference,
@@ -230,27 +228,9 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
     the train set
     """
     names = list(set(groups_frames_names))
-    labels = get_labels(names)
-    names_train_imposed = parameters.names_train
-    indexs_1 = []
-    indexs_0 = []
-    for i in range(len(labels)):
-        if labels[i] == 1:
-            indexs_1.append(i)
-        else:
-            indexs_0.append(i)
 
-    nb_classes = 2
-    nb_video_train = int(len(names) * (1 - percentage_testset) / nb_classes)
-
-    index_train = indexs_1[0:nb_video_train] + indexs_0[0:nb_video_train]
-    index_test = list(set(list(range(len(labels)))) - set(index_train))
-
-    names_train = [names[i] for i in index_train]
-    names_test = [names[i] for i in index_test]
-
-    if names_train_imposed is not None:
-        names_train = names_train_imposed
+    names_train = parameters.names_train
+    names_test = list(set(names)-set(names_train))
 
     print(" names of train set videos : ", names_train)
     print(" names of test set videos : ", names_test)
@@ -269,8 +249,7 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
     pixel_difference = Data_sets(*train_test_attribution(X_features_pixelDifference, names_train, groups_frames_names))
     colours = Data_sets(*train_test_attribution(X_features_colours, names_train, groups_frames_names))
 
-    Y_train, Y_test = train_test_attribution(
-        Y, names_train, groups_frames_names)
+    Y_train, Y_test = train_test_attribution(Y, names_train, groups_frames_names)
     Y_train, Y_test = np.array(Y_train), np.array(Y_test)
 
     groups_frames_names_train, groups_frames_names_test = train_test_attribution(
@@ -281,8 +260,9 @@ def make_train_test_set(X_features_CNN, X_features_pixelDifference,
 
 def get_assemble_set(preds):
     """Make a set for voting, given prediction done by the models."""
+
     def create_one_assemble(preds):
-        X_assemble=[]
+        X_assemble = []
         for i in range(len(preds[0])):
             sublist = []
             for j in range(len(preds)):
@@ -291,6 +271,7 @@ def get_assemble_set(preds):
         return X_assemble
 
     return Data_sets(create_one_assemble(preds.X_train), create_one_assemble(preds.X_test))
+
 
 def get_names_train():
     """Return a list of names_train."""
