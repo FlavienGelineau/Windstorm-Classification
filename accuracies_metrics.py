@@ -38,15 +38,24 @@ def mat_conf(Y_test, Y_pred, name=""):
             Y_pred = [pred[0] for pred in Y_pred]
     Y_test_mat_conf = data_processing.position_of_1_in_sublists(Y_test)
     cm = confusion_matrix(Y_pred, Y_test_mat_conf)
-    print("confusion matrix for test set {}".format(name))
-    print(cm)
 
-    print("final accuracy on test set")
     acc = 0
     for i in range(len(cm)):
         acc += cm[i][i] / (cm[0][i] + cm[1][i] + cm[2][i])
+
+    print("confusion matrix for test set {}".format(name))
+    print(cm)
+    print("final accuracy on test set")
 
     print(acc / len(cm))
     print("-----------------------------------------")
     print("-----------------------------------------")
     return acc / len(cm)
+
+
+def adujsted_loss(Y_true, Y_pred):
+    cm = confusion_matrix(Y_pred, Y_true)
+    acc = 0
+    for i in range(len(cm)):
+        acc += cm[i][i] / (cm[0][i] + cm[1][i] + cm[2][i])
+    return acc

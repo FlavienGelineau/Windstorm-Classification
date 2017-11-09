@@ -91,15 +91,17 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
                  Y_train, Y_test, nb_features):
     """Train each LSTM model on their respective train set."""
     print("fitting on LSTM model")
-    early_stopper = EarlyStopping(patience=7)
+    early_stopper = EarlyStopping(patience=6)
 
     train_preds = []
     test_preds = []
     accs = []
-    LSTM_CNN = LSTMwithKeras.lstm(shape=(15, nb_features), n_classes=n_classes, learning_rate=10 ** -4, decay=0.01)
-    path_initial_weights = get_path("Models", "Initial_weights_LSTM_CNN.hdf5")
-    LSTM_CNN.save_weights(path_initial_weights)
     for i in range(n_models):
+        LSTM_CNN = LSTMwithKeras.lstm(shape=(15, nb_features), n_classes=n_classes, learning_rate=8 * 10 ** -5,
+                                      decay=0.02)
+        path_initial_weights = get_path("Models", "Initial_weights_LSTM_CNN.hdf5")
+        LSTM_CNN.save_weights(path_initial_weights)
+
         print("model number : {0}".format(str(i + 1)))
 
         name_file = "model_{0}".format(str(i))
@@ -116,13 +118,9 @@ def bagging_LSTM(n_models, n_classes, models_to_fit, X_train_CNN, X_test_CNN,
         X_train_CNN_local = reduce_features(X_train_CNN, nb_features, start=start)
         X_test_CNN_local = reduce_features(X_test_CNN, nb_features, start=start)
 
-        LSTM_CNN.optimizer.lr.assign(10 ** -4)
         if i in models_to_fit:
-            # X_test_CNN_local, Y_test = shuffle(X_test_CNN_local, Y_test)
-            LSTM_CNN.fit(np.array(X_train_CNN_local), Y_train,
-                         validation_data=(np.array(X_test_CNN_local), Y_test),
-                         batch_size=500, epochs=300, verbose=0, shuffle=True,
-                         callbacks=[checkpointer, early_stopper])
+            LSTM_CNN.fit(np.array(X_train_CNN_local), Y_train, validation_data=(np.array(X_test_CNN_local), Y_test),
+                         batch_size=900, epochs=300, verbose=0, shuffle=True, callbacks=[checkpointer, early_stopper])
             load_weights_LSTM_CNN(LSTM_CNN, name_file)
         Y_train_pred_LSTM, Y_test_pred_LSTM = LSTM_CNN.predict(
             np.array(X_train_CNN_local)), LSTM_CNN.predict(
@@ -187,7 +185,6 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
         voting_methods.X_probas_to_X_class(assemble_set.X_train, nb_model, nb_class),
         voting_methods.X_probas_to_X_class(assemble_set.X_test, nb_model, nb_class)
     )
-
     # ###################### Assemble Learning ##############################
 
     Y_test_pred_proba = predict_with_MLP(
@@ -219,7 +216,7 @@ def one_iter(cnn_features_extracted, Y_train, Y_test, parameters):
 def main():
     """Launch the global programm."""
 
-    nb_models = [3]
+    nb_models = [8]
     nb_features = [512]
     for nb_model in nb_models:
         for nb_feature in nb_features:
@@ -227,7 +224,8 @@ def main():
                                     nb_feature=nb_feature, models_to_fit=[])
 
             cnn_features_extracted, pixel_difference, colours, Y_train, Y_test, groups_frames_names_train, groups_frames_names_test = import_set.make_train_test_set(
-                *import_set.get_set(load_pickle=False, parameters=parameters), percentage_testset=0.2, parameters=parameters)
+                *import_set.get_set(load_pickle=False, parameters=parameters), percentage_testset=0.2,
+                parameters=parameters)
 
             accuracies = one_iter(cnn_features_extracted, Y_train, Y_test, parameters)
             accuracies.append_to_file(parameters)

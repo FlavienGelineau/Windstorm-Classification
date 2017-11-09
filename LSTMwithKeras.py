@@ -72,9 +72,8 @@ def set_to_features(X_set):
     features = []
     for i in range(len(X_set)):
         print(i, " out of ", len(X_set))
-        bag_of_features = []
-        for j in range(len(X_set[i])):
-            bag_of_features.append(ext.extract(X_set[i][j]))
+        bag_of_features = [ext.extract(X_set[i][j]) for j in range(len(X_set[i]))]
+
         features.append(bag_of_features)
 
     return features
@@ -87,15 +86,14 @@ def lstm(shape, n_classes, learning_rate, decay):
     """
     # Model.
     model = Sequential()
-    model.add(LSTM(4000, return_sequences=True, input_shape=shape, dropout=0.5))
+    model.add(LSTM(400, return_sequences=True, input_shape=shape, dropout=0.1))
     model.add(Flatten())
-    model.add(Dense(700, activation='relu'))
-    model.add(Dropout(0.4))
     model.add(Dense(300, activation='relu'))
-    model.add(Dropout(0.2))
+    model.add(Dense(200, activation='relu'))
+
+    #model.add(Dropout(0.2))
     model.add(Dense(n_classes, activation='softmax'))
 
-    # aggressively small learning rate
     optimizer = Adam(lr=learning_rate, decay=decay)
     model.compile(loss='categorical_crossentropy',
                   optimizer=optimizer, metrics=['accuracy'])
