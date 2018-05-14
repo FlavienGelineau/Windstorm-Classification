@@ -44,7 +44,7 @@ class Extractor():
 
     def extract(self, x):
         """Return features."""
-        x = np.expand_dims(x, axis=0)
+        x = np.expand_dims(x, axis=0).astype(np.float32)
         x = preprocess_input(x)
 
         # Get the prediction.
@@ -63,7 +63,7 @@ class Extractor():
 def video_to_features(vid):
     """Return features for every frame of the video."""
     ext = Extractor()
-    return [ext.extract(vid[j]) for j in range(len(vid))]
+    return [ext.extract(frame) for frame in vid]
 
 
 def set_to_features(X_set):
