@@ -88,8 +88,6 @@ def lstm(shape, n_classes, learning_rate, decay):
     model = Sequential()
     model.add(LSTM(400, return_sequences=True, input_shape=shape, dropout=0.1))
     model.add(Flatten())
-    model.add(Dense(300, activation='relu'))
-    model.add(Dense(200, activation='relu'))
 
     #model.add(Dropout(0.2))
     model.add(Dense(n_classes, activation='softmax'))
